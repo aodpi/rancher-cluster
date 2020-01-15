@@ -206,6 +206,7 @@ registry:
     REGISTRY_AUTH: htpasswd
     REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
     REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+    REGISTRY_HTTP_ADDR: 0.0.0.0:443
   volumes:
     - /path/data:/var/lib/registry
     - /path/certs:/certs
