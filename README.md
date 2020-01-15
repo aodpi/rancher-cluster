@@ -92,20 +92,24 @@ The registry is now ready to use.
 Now that your local registry is up and running let's try to push an image. We will copy an image from docker hub and push it to our local registry in this example.
 
 1. Pull the `nginx:latest` image from Docker Hub.
+
     ```bash
     $ docker pull nginx:latest
     ```
 2. Tag the image as `localhost:5000/my-nginx`. The first part of the tag is the hostname and port. When pushing docker interprets this part as the location of the registry to push to. In our case the registry is running locally so the host is `localhost` and the port is `5000` which was published above.
 3. Push the image to the local registry running at `localhost:5000`:
+
     ```bash
     $ docker push localhost:5000/my-nginx
     ```
 4. Remove the locally cashed `nginx:latest` and `localhost:5000/my-nginx` images so that you can test pulling from your registry. This does not remove `localhost:5000/my-nginx` from your registry.
+
     ```bash
     $ docker image remove nginx:latest
     $ docker image remove localhost:5000/my-nginx
     ```
 5. Pull the `localhost:5000/my-nginx` from your local registry
+
     ```bash
     $ docker pull localhost:5000/my-nginx
     ```
