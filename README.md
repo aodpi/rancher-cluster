@@ -158,3 +158,66 @@ This example assumes that:
     $ docker push myregistry.domain.com/my-nginx
     $ docker pull myregistry.domain.com/my-nginx
     ```
+
+## Registry authentication
+
+The simples way to achieve access restriction is through basic authentication. This example uses native basic authentication using htpasswd to store the secrets.
+
+1. Create a password file with one entry for the user `testuser` with the password `testpassword`:
+
+    ```bash
+    $ mkdir auth
+    $ docker run --entrypoint htpasswd registry:2 -Bbn testuser testpassword > auth/passwd
+    ```
+2. Stop the registry if currently running
+
+    ```bash
+    $ docker container stop registry
+    ```
+3. Start the registry with basic authentication
+
+    ```bash
+    $ docker run -p 443:443 --restart=always --name registry -v "$(pwd)"/auth:/auth -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd -v "$(pwd)"/certs:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key registry:2
+    ```
+4. Now you if you try to push or to pull images from this registry the command will fail.
+5. Log in to the registry
+
+    ```bash
+    $ docker login myregistry.domain.com
+    ```
+
+    When asked provide the username and password you've set in step one.
+
+    Now you should be able to push or to pull from the registry.
+
+## Deployment using docker compose
+
+An easier way to run and configure a docker registry would be using docker compose. All the configurations above can now be writtne in a `docker-compose.yml` file as shown below:
+
+```yaml
+registry:
+  restart: always
+  image: registry:2
+  ports:
+    - 443:443
+  environment:
+    REGISTRY_HTTP_TLS_CERTIFICATE: /certs/domain.crt
+    REGISTRY_HTTP_TLS_KEY: /certs/domain.key
+    REGISTRY_AUTH: htpasswd
+    REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+    REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+  volumes:
+    - /path/data:/var/lib/registry
+    - /path/certs:/certs
+    - /path/auth:/auth
+```
+
+Make sure to replace /path with the directory containing the `certs/` and `auth/` directories.
+
+Start and configure your registry by simply running the following command in the directory containing the `docker-compose.yml` file:
+
+```bash
+$ docker-compose up -d
+```
+
+This is it, the registry is now configured to use https with provided certificate and key have authentication and running currently. This registry can now be used externally to push or pull images securely.
