@@ -97,6 +97,11 @@ Now that your local registry is up and running let's try to push an image. We wi
     $ docker pull nginx:latest
     ```
 2. Tag the image as `localhost:5000/my-nginx`. The first part of the tag is the hostname and port. When pushing docker interprets this part as the location of the registry to push to. In our case the registry is running locally so the host is `localhost` and the port is `5000` which was published above.
+
+    ```bash
+    docker tag nginx:latest localhost:5000/my-nginx
+    ```
+
 3. Push the image to the local registry running at `localhost:5000`:
 
     ```bash
@@ -114,3 +119,42 @@ Now that your local registry is up and running let's try to push an image. We wi
     $ docker pull localhost:5000/my-nginx
     ```
 The image should be pulled successfuly from the registry now.
+
+Great. The registry works, but locally which means it will not be accessible remotely. We need to make this registry remotely accessible and configure an authentication with user name and password.
+
+## Run an external-accessible registry
+
+In order to make your registry accessible to external hosts, you must first secure it using TLS.
+
+### Get a certificate
+
+This example assumes that:
+
+* Your registry URL is `https://myregistry.domain.com`
+* Your DNS, routing and firewall settings allow access to the registry's host on port 443.
+* You already obtained a certificate from a certificate authority (CA)
+
+1. Create a certs directory
+    
+    ```bash
+    $ mkdir -p certs
+    ```
+2. Stop the registry if it's currenlty running.
+
+    ```bash
+    $ docker container stop registry
+    ```
+
+3. Restart the registry, directing it to use the TLS certificate. This command bind-mounts the `certs/` directory into the container at `/certs` and sets environment variables that tell the container where to find the domain.crt and domain.key file. The registry runs on port 443, the default HTTPS port.
+
+    ```bash
+    $ docker run -d --restart=always --name registry -v "$(pwd)"/certs:/certs -e REGISTRY_HTTP_ADDR=0.0.0.0:443 -e REGISTR_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key -p 443:443 registry:2
+    ```
+4. Docker clients can now pull and push from your registry using provided external address. Here is an example
+
+    ```bash
+    $ docker pull nginx:latest
+    $ docker tag nginx:latest myregistry.domain.com/my-nginx
+    $ docker push myregistry.domain.com/my-nginx
+    $ docker pull myregistry.domain.com/my-nginx
+    ```
